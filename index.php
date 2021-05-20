@@ -4,12 +4,7 @@ require 'vendor/autoload.php';
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
-if (!empty($_FILES)) {
-	header("location:stroke2.php?id=".$_FILES["file"]["name"]);
-
-}
-
- function num2alpha($n)  //數字轉英文(0=>A、1=>B、26=>AA...以此類推)
+function num2alpha($n)  //數字轉英文(0=>A、1=>B、26=>AA...以此類推)
 {
     for($r = ""; $n >= 0; $n = intval($n / 26) - 1)
         $r = chr($n%26 + 0x41) . $r; 
@@ -77,7 +72,6 @@ $filename=substr($_FILES["file"]["name"],0, strripos($_FILES["file"]["name"], $f
 if ($filetype==".xls" or $filetype==".xlsx") {
 	move_uploaded_file($_FILES["file"]["tmp_name"],"./filetmp/".$_FILES["file"]["name"]);
 	$loadFile=PhpOffice\PhpSpreadsheet\IOFactory::load('./filetmp/'.$_FILES["file"]["name"]);
-//	$loadFile=PhpOffice\PhpSpreadsheet\IOFactory::load($_FILES);
 	$sheetData=$loadFile->getSheet(0)->toArray();
 	for ($i=1; $i<count($sheetData); $i++) {
 		$names=StrokeProcess($sheetData[$i][1]);
@@ -97,30 +91,23 @@ if ($filetype==".xls" or $filetype==".xlsx") {
 		$sheetData[0][$i*3+3]=$t."_old";
 		$sheetData[0][$i*3+4]=$t."_KangXi";
 	}
-	var_dump($sheetData);
+//	var_dump($sheetData);
+	$newFilename=$filename.'_stroke.xlsx';
 	$objwrite=new \PhpOffice\PhpSpreadsheet\Spreadsheet();
 	$objwrite->getActiveSheet()->fromArray($sheetData, NULL, 'A1');
 	$writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($objwrite);
-	$writer->save('filetmp/'.$filename.'_stroke.xlsx');
-/*	$objwrite= new PHPExcel();
-	$objwrite->getProperties()->setCreator("stroke")
-	->setLastModifiedBy("stroke")
-	->setTitle("stroke count")
-	->setSubject("筆畫計算")
-	->setDescription("筆畫計算")
-	->setKeywords("stroke")
-	->setCategory("stroke");
-	$objwrite->setActiveSheetIndex(0);
-	for ($i=1; $i<=count($sheetData); $i++) {
-		reset($sheetData[$i]);
-		for ($j=0; $j<count($sheetData[$i]); $j++) {
-			$objwrite->getActiveSheet()->setCellValue(num2alpha($j).$i, current($sheetData[$i]));
-			next($sheetData[$i]);
-		}
-	}
-	$objWriter2 = PHPExcel_IOFactory::createWriter($objwrite, 'Excel2007');
-	$objWriter2->save('filetmp/'.$filename.'_stroke.xlsx');
-*/
+	$writer->save('filetmp/'.$newFilename);
+	header('Content-Type:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+	header('Content-Disposition:attachment;filename='.$newFilename);
+	header('Content-Length: '.filesize($newFilename));
+	header('Content-Transfer-Encoding: binary');
+	header('Cache-Control: must-revalidate');
+	header('Pragma: public');
+	ob_clean();
+	flush();
+	readfile('filetmp/'.$newFilename);
+	unlink("filetmp/".$_FILES["file"]["name"]);
+	unlink("filetmp/".$newFilename);
 }
 else { 
 	echo "上傳檔案格式錯誤！！";
