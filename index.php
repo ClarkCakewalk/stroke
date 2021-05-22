@@ -97,17 +97,23 @@ if ($filetype==".xls" or $filetype==".xlsx") {
 	$objwrite->getActiveSheet()->fromArray($sheetData, NULL, 'A1');
 	$writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($objwrite);
 	$writer->save('filetmp/'.$newFilename);
-	header('Content-Type:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-	header('Content-Disposition:attachment;filename='.$newFilename);
-	header('Content-Length: '.filesize($newFilename));
-	header('Content-Transfer-Encoding: binary');
-	header('Cache-Control: must-revalidate');
-	header('Pragma: public');
-	ob_clean();
-	flush();
-	readfile('filetmp/'.$newFilename);
-	unlink("filetmp/".$_FILES["file"]["name"]);
-	unlink("filetmp/".$newFilename);
+	if (file_exists('filetmp/'.$newFilename)) {
+		$zip = new ZipArchive();
+		$zipfile=$filename.'.zip';
+		$createZip=$zip->open(__DIR__.'/filetmp/'.$zipfile, ZipArchive::CREATE);
+		if($createZip===true) {
+			$zip->addFile(__DIR__.'/filetmp/'.$newFilename, $newFilename);
+		}
+		$zip->close();
+		header("Content-type:application/zip");
+		header("Content-Disposition:filename=".$zipfile);
+		ob_clean();
+		flush();
+		readfile(__DIR__.'/filetmp/'.$zipfile);
+		unlink("filetmp/".$_FILES["file"]["name"]);
+		unlink("filetmp/".$newFilename);
+		unlink("filetmp/".$zipfile);
+	}
 }
 else { 
 	echo "上傳檔案格式錯誤！！";
